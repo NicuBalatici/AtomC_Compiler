@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/balaticinicolae/Library/CloudStorage/OneDrive-Personal/Documente/Facultate AC 2022-2026 LICENTA/POLI_AN_3/SEM2/LFTC lab/lab2",
+      "program": "/Users/balaticinicolae/Library/CloudStorage/OneDrive-Personal/Documente/Facultate AC 2022-2026 LICENTA/POLI_AN_3/SEM2/LFTC lab/lab2/build/Debug/outDebug"
+    }
+  ]
+}
