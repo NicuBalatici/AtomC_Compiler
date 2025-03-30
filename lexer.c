@@ -203,7 +203,8 @@ Token *tokenize(const char *pch) {
     }
 }
 
-void showTokens(const Token *tokens) {
+void showTokens(const Token *tokens)
+{
     FILE *file = fopen("lista-de-atomi-REZOLVATA.txt", "w");
     
     if (!file)
@@ -223,24 +224,30 @@ void showTokens(const Token *tokens) {
 
     for (const Token *tk = tokens; tk; tk = tk->next) 
     {
-        if (tk->code >= 0 && tk->code <= STRING) { fprintf(file, "%d\t%s", tk->line, tokenNames[tk->code]); } 
-        else { fprintf(file, "%d\tUNKNOWN(%d)", tk->line, tk->code); }
+        if (tk->code >= 0 && tk->code <= STRING)
+        {
+            fprintf(file, "%d\t%s", tk->line, tokenNames[tk->code]);
+        } 
+        else
+        {
+            fprintf(file, "%d\tUNKNOWN(%d)", tk->line, tk->code);
+        }
 
         switch (tk->code) 
         {
             case ID:
-            case STRING:
-                fprintf(file, ":%s", tk->text);
-                break;
-            case INT:
-                fprintf(file, ":%d", tk->i);
-                break;
-            case DOUBLE:
-                fprintf(file, ":%.2f", tk->d);
-                break;
-            case CHAR:
-                fprintf(file, ":%c", tk->c);
-                break;
+            // case STRING:
+            //     fprintf(file, ":%s", tk->text);
+            //     break;
+            // case INT:
+            //     fprintf(file, ":%d", tk->i);
+            //     break;
+            // case DOUBLE:
+            //     fprintf(file, ":%.2f", tk->d);
+            //     break;
+            // case CHAR:
+            //     fprintf(file, ":%c", tk->c);
+            //     break;
         }
 
         fprintf(file, "\n");

@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<stdbool.h>
+#include<stdarg.h>
 
 #include "utils.h"
 #include "parser.h"
@@ -45,20 +46,20 @@ bool exprAssign()
             {
                 return true;
             }
-            else
-            {
-                tkerr("Invalid syntax.");
-            }
+            // else
+            // {
+            //     tkerr("Invalid syntax.");
+            // }
         }
         else
         {
             tkerr("Wrong =.");
         }
     }
-    else
-    {
-        tkerr("Missing = before statement.");
-    }
+    // else
+    // {
+    //     tkerr("Missing = before statement.");
+    // }
     iTk = start;
     return exprOr();
 }
@@ -75,20 +76,20 @@ bool exprOr()
             {
                 return true;
             }
-            else
-            {
-                tkerr("Invalid syntax.");
-            }
+            // else
+            // {
+            //     tkerr("Invalid syntax.");
+            // }
         }
         else
         {
             tkerr("Missing | before syntax.");
         }
     }
-    else
-    {
-        tkerr("Missing || before statement.");
-    }
+    // else
+    // {
+    //     tkerr("Missing || before statement.");
+    // }
 
     iTk = start;
     return exprAnd();
@@ -106,20 +107,20 @@ bool exprAnd()
             {
                 return true;
             }
-            else
-            {
-                tkerr("Invalid syntax.");
-            }
+            // else
+            // {
+            //     tkerr("Invalid syntax.");
+            // }
         }
         else
         {
             tkerr("Missing & mefore statement.");
         }
     }
-    else
-    {
-        tkerr("Missing && before statement.");
-    }
+    // else
+    // {
+    //     tkerr("Missing && before statement.");
+    // }
 
     iTk = start;
     return exprEq();
@@ -137,20 +138,20 @@ bool exprEq()
             {
                 return true;
             }
-            else
-            {
-                tkerr("Invalid syntax.");
-            }
+            // else
+            // {
+            //     tkerr("Invalid syntax.");
+            // }
         }
         else
         {
             tkerr("Missing = before statement.");
         }
     }
-    else
-    {
-        tkerr("Invalid syntax.");
-    }
+    // else
+    // {
+    //     tkerr("Invalid syntax.");
+    // }
 
     if (exprEq())
     {
@@ -160,20 +161,20 @@ bool exprEq()
             {
                 return true;
             }
-            else
-            {
-                tkerr("Invalid syntax.");
-            }
+            // else
+            // {
+            //     tkerr("Invalid syntax.");
+            // }
         }
         else
         {
             tkerr("Missing != before statement.");
         }
     }
-    else
-    {
-        tkerr("Invalid syntax.");
-    }
+    // else
+    // {
+    //     tkerr("Invalid syntax.");
+    // }
 
     iTk = start;
     return exprRel();
@@ -191,10 +192,10 @@ bool exprRel()
             {
                 return true;
             }
-            else
-            {
-                tkerr("Invalid expression.");
-            }
+            // else
+            // {
+            //     tkerr("Invalid expression.");
+            // }
         }
         else
         {
@@ -210,10 +211,10 @@ bool exprRel()
             {
                 return true;
             }
-            else
-            {
-                tkerr("Invalid expression.");
-            }
+            // else
+            // {
+            //     tkerr("Invalid expression.");
+            // }
         }
         else
         {
@@ -229,10 +230,10 @@ bool exprRel()
             {
                 return true;
             }
-            else
-            {
-                tkerr("Invalid expression.");
-            }
+            // else
+            // {
+            //     tkerr("Invalid expression.");
+            // }
         }
         else
         {
@@ -248,10 +249,10 @@ bool exprRel()
             {
                 return true;
             }
-            else
-            {
-                tkerr("Invalid expression.");
-            }
+            // else
+            // {
+            //     tkerr("Invalid expression.");
+            // }
         }
         else
         {
@@ -275,10 +276,10 @@ bool exprAdd()
             {
                 return true;
             }
-            else
-            {
-                tkerr("Invalid expression.");
-            }
+            // else
+            // {
+            //     tkerr("Invalid expression.");
+            // }
         }
         else
         {
@@ -294,10 +295,10 @@ bool exprAdd()
             {
                 return true;
             }
-            else
-            {
-                tkerr("Invalid expression.");
-            }
+            // else
+            // {
+            //     tkerr("Invalid expression.");
+            // }
         }
         else
         {
@@ -321,10 +322,10 @@ bool exprMul()
             {
                 return true;
             }
-            else
-            {
-                tkerr("invalid expression.");
-            }
+            // else
+            // {
+            //     tkerr("invalid expression.");
+            // }
         }
         else
         {
@@ -340,10 +341,10 @@ bool exprMul()
             {
                 return true;
             }
-            else
-            {
-                tkerr("invalid expression.");
-            }
+            // else
+            // {
+            //     tkerr("invalid expression.");
+            // }
         }
         else
         {
@@ -368,20 +369,20 @@ bool exprCast()
                 {
                     return true;
                 }
-                else
-                {
-                    tkerr("Invalid syntax.");
-                }
+                // else
+                // {
+                //     tkerr("Invalid syntax.");
+                // }
             }
             else
             {
                 tkerr("Missing ) before syntax.");
             }
         }
-        else
-        {
-           tkerr("Invalid syntax.");
-        }
+        // else
+        // {
+        //    tkerr("Invalid syntax.");
+        // }
     }
     else
     {
@@ -400,10 +401,10 @@ bool exprUnary()
         {
             return true;
         }
-        else
-        {
-            tkerr("Invalid syntax.");
-        }
+        // else
+        // {
+        //     tkerr("Invalid syntax.");
+        // }
     }
     else
     {
@@ -416,10 +417,10 @@ bool exprUnary()
         {
             return true;
         }
-        else
-        {
-            tkerr("Invalid syntax.");
-        }
+        // else
+        // {
+        //     tkerr("Invalid syntax.");
+        // }
     }
     else
     {
@@ -489,18 +490,18 @@ bool exprPrimary()
         tkerr("Error. It should be STRING.");
     }
 
-    if (consume(LPAR))
-    {
-        if (!expr())
-        {
-            err("Expected expression inside parentheses");
-        }
-        if (!consume(RPAR))
-        {
-            tkerr("Expected closing ) after expression");
-        }
-        return true;
-    }
+    // if (consume(LPAR))
+    // {
+    //     if (!expr())
+    //     {
+    //         err("Expected expression inside parentheses");
+    //     }
+    //     if (!consume(RPAR))
+    //     {
+    //         tkerr("Expected closing ) after expression");
+    //     }
+    //     return true;
+    // }
 
     iTk = start;
     return false;
@@ -514,10 +515,10 @@ bool exprPostfix()
     {
         return true;
     }
-    else
-    {
-        tkerr("Invalid syntax.");
-    }
+    // else
+    // {
+    //     tkerr("Invalid syntax.");
+    // }
 
     if (exprPostfix())
     {
@@ -529,25 +530,25 @@ bool exprPostfix()
                 {
                     return true;
                 }
-                else
-                {
-                    tkerr("Missing ] before statement.");
-                }
+                // else
+                // {
+                //     tkerr("Missing ] before statement.");
+                // }
             }
-            else
-            {
-                tkerr("Invalid syntax.");
-            }
+            // else
+            // {
+            //     tkerr("Invalid syntax.");
+            // }
         }
         else
         {
             tkerr("Missing [ before statement.");
         }
     }
-    else
-    {
-        tkerr("Invalid syntax.");
-    }
+    // else
+    // {
+    //     tkerr("Invalid syntax.");
+    // }
 
     if (exprPostfix())
     {
@@ -567,23 +568,70 @@ bool exprPostfix()
             tkerr("Missing . before statement.");
         }
     }
-    else
-    {
-        tkerr("invlaid syntax.");
-    }
+    // else
+    // {
+    //     tkerr("invlaid syntax.");
+    // }
     
     iTk = start;
     return false;
 }
 
+char *tkCodeName(int code)
+{
+    switch (code) {
+        case ASSIGN: return "ASSIGN";
+        case OR: return "OR";
+        case AND: return "AND";
+        case EQUAL: return "EQUAL";
+        case NOTEQ: return "NOTEQ";
+        case LESS: return "LESS";
+        case LESSEQ: return "LESSEQ";
+        case GREATER: return "GREATER";
+        case GREATEREQ: return "GREATEREQ";
+        case ADD: return "ADD";
+        case SUB: return "SUB";
+        case MUL: return "MUL";
+        case DIV: return "DIV";
+        case LPAR: return "LPAR";
+        case RPAR: return "RPAR";
+        case LBRACKET: return "LBRACKET";
+        case RBRACKET: return "RBRACKET";
+        case DOT: return "DOT";
+        case COMMA: return "COMMA";
+        case SEMICOLON: return "SEMICOLON";
+        case ID: return "ID";
+        case INT: return "INT";
+        case DOUBLE: return "DOUBLE";
+        case CHAR: return "CHAR";
+        case STRING: return "STRING";
+        case STRUCT: return "STRUCT";
+        case IF: return "IF";
+        case ELSE: return "ELSE";
+        case WHILE: return "WHILE";
+        case RETURN: return "RETURN";
+        case VOID: return "VOID";
+        case TYPE_INT: return "TYPE_INT";
+        case TYPE_DOUBLE: return "TYPE_DOUBLE";
+        case TYPE_CHAR: return "TYPE_CHAR";
+        case END: return "END";
+        default: return "UNKNOWN";
+    }
+}
+
 bool consume(int code)
 {
+    printf("consume(%s) ",tkCodeName(code));
+
     if(iTk->code==code)
     {
         consumedTk=iTk;
         iTk=iTk->next;
+        printf(" => consumed\n");
         return true;
     }
+
+    printf(" => found %s\n",tkCodeName(iTk->code));
     return false;
 }
 
@@ -637,10 +685,10 @@ bool varDef()
             tkerr("invalid ID");
         }
     }
-    else
-    {
-        tkerr("Invalid syntax");
-    }
+    // else
+    // {
+    //     tkerr("Invalid syntax");
+    // }
     iTk = start;
     return false;
 }
@@ -682,10 +730,10 @@ bool fnDef()
             tkerr("Missing ID");
         }
     }
-    else
-    {
-        tkerr("Invalid syntax.");
-    }
+    // else
+    // {
+    //     tkerr("Invalid syntax.");
+    // }
 
     if (consume(VOID))
     {
@@ -701,10 +749,10 @@ bool fnDef()
                     {
                         return true;
                     }
-                    else
-                    {
-                        tkerr("Invalid syntax.");
-                    }
+                    // else
+                    // {
+                    //     tkerr("Invalid syntax.");
+                    // }
                 }
                 else
                 {
@@ -822,20 +870,20 @@ bool fnParam()
             { 
                 return true;
             }
-            else
-            {
-                tkerr("Invalid syntax.");
-            }
+            // else
+            // {
+            //     tkerr("Invalid syntax.");
+            // }
         }
         else
         {
             tkerr("Invalid ID.");
         }
     }
-    else
-    {
-        tkerr("Invalid syntax.");
-    }
+    // else
+    // {
+    //     tkerr("Invalid syntax.");
+    // }
     iTk=start;
     return false;
 }
@@ -867,10 +915,10 @@ bool stm()
                     tkerr("Missing or invalid expression in ) statement.");
                 }
             }
-            else
-            {
-                tkerr("Invalid expression.");
-            }
+            // else
+            // {
+            //     tkerr("Invalid expression.");
+            // }
         }
         else
         {
