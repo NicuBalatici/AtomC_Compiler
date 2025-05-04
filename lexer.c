@@ -236,22 +236,65 @@ void showTokens(const Token *tokens)
         switch (tk->code) 
         {
             case ID:
-            // case STRING:
-            //     fprintf(file, ":%s", tk->text);
-            //     break;
-            // case INT:
-            //     fprintf(file, ":%d", tk->i);
-            //     break;
-            // case DOUBLE:
-            //     fprintf(file, ":%.2f", tk->d);
-            //     break;
-            // case CHAR:
-            //     fprintf(file, ":%c", tk->c);
-            //     break;
+            case STRING:
+                fprintf(file, ":%s", tk->text);
+                break;
+            case INT:
+                fprintf(file, ":%d", tk->i);
+                break;
+            case DOUBLE:
+                fprintf(file, ":%.2f", tk->d);
+                break;
+            case CHAR:
+                fprintf(file, ":%c", tk->c);
+                break;
         }
 
         fprintf(file, "\n");
     }
-    free((void *)tokens);
+
     fclose(file);
+}
+
+void showTokensTerminal(const Token *tokens)
+{
+    static const char *tokenNames[] = 
+    {
+        "ID", "TYPE_CHAR", "TYPE_DOUBLE", "ELSE", "IF", "TYPE_INT", "RETURN",
+        "STRUCT", "VOID", "WHILE", "COMMA", "END", "SEMICOLON", "LPAR", "RPAR",
+        "LBRACKET", "RBRACKET", "LACC", "RACC", "ADD", "SUB", "MUL", "DIV",
+        "DOT", "AND", "OR", "NOT", "ASSIGN", "EQUAL", "NOTEQ", "LESS", "LESSEQ",
+        "GREATER", "GREATEREQ", "INT", "DOUBLE", "CHAR", "STRING"
+    };
+
+    for (const Token *tk = tokens; tk; tk = tk->next) 
+    {
+        if (tk->code >= 0 && tk->code <= STRING)
+        {
+            printf("%d\t%s", tk->line, tokenNames[tk->code]);
+        } 
+        else
+        {
+            printf("%d\tUNKNOWN(%d)", tk->line, tk->code);
+        }
+
+        switch (tk->code) 
+        {
+            case ID:
+            case STRING:
+                printf(":%s", tk->text);
+                break;
+            case INT:
+                printf(":%d", tk->i);
+                break;
+            case DOUBLE:
+                printf(":%.2f", tk->d);
+                break;
+            case CHAR:
+                printf(":%c", tk->c);
+                break;
+        }
+
+        printf("\n");
+    }
 }

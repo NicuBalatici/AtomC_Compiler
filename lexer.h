@@ -59,3 +59,4 @@ typedef struct Token{
 char *extract(const char *begin, const char *end);
 Token *tokenize(const char *pch);
 void showTokens(const Token *tokens);
+void showTokensTerminal(const Token *tokens);

@@ -30,9 +30,19 @@ void parse(Token *tokens)
     }
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winfinite-recursion"
+
 bool expr()
 {
-    return exprAssign();
+    Token* start = iTk;
+
+	if (exprAssign()) {
+		return true;
+	}
+
+	iTk = start;
+	return false;
 }
 
 bool exprAssign()
@@ -46,14 +56,10 @@ bool exprAssign()
             {
                 return true;
             }
-            // else
-            // {
-            //     tkerr("Invalid syntax.");
-            // }
-        }
-        else
-        {
-            tkerr("Wrong =.");
+            else
+            {
+                tkerr("Invalid ASSIGN syntax.");
+            }
         }
     }
     // else
@@ -61,299 +67,252 @@ bool exprAssign()
     //     tkerr("Missing = before statement.");
     // }
     iTk = start;
-    return exprOr();
+
+	if (exprOr()) {
+		return true;
+	}
+
+	iTk = start;
+	return false;
+}
+
+bool exprOrPrim() {
+	if (consume(OR)) {
+		if (exprAnd()) {
+			if (exprOrPrim()) {
+				return true;
+			}
+		} else {
+			tkerr("invalid || expression");
+		}
+	}
+
+	return true;
 }
 
 bool exprOr()
 {
-    Token *start = iTk;
+    Token* start = iTk;
 
-    if (exprOr())
+	if (exprAnd())
     {
-        if(consume(OR))
+		if (exprOrPrim())
         {
-            if(exprAnd())
-            {
-                return true;
-            }
-            // else
-            // {
-            //     tkerr("Invalid syntax.");
-            // }
-        }
-        else
-        {
-            tkerr("Missing | before syntax.");
-        }
-    }
-    // else
-    // {
-    //     tkerr("Missing || before statement.");
-    // }
+			return true;
+		}
+	}
 
-    iTk = start;
-    return exprAnd();
+	iTk = start;
+	return false;
+}
+
+bool exprAndPrim() {
+	if (consume(AND))
+    {
+		if (exprEq())
+        {
+			if (exprAndPrim())
+            {
+				return true;
+			}
+		} else {
+			tkerr("invalid && expression");
+		}
+	}
+
+	return true;
 }
 
 bool exprAnd()
 {
-    Token *start = iTk;
+    Token* start = iTk;
 
-    if (exprAnd())
+	if (exprEq())
     {
-        if(consume(AND))
+		if (exprAndPrim())
         {
-            if(exprEq())
-            {
-                return true;
-            }
-            // else
-            // {
-            //     tkerr("Invalid syntax.");
-            // }
-        }
-        else
-        {
-            tkerr("Missing & mefore statement.");
-        }
-    }
-    // else
-    // {
-    //     tkerr("Missing && before statement.");
-    // }
+			return true;
+		}
+	}
 
-    iTk = start;
-    return exprEq();
+	iTk = start;
+	return false;
+}
+
+bool exprEqPrim()
+{
+	if (consume(EQUAL))
+    {
+		if (exprRel())
+        {
+			if (exprEqPrim())
+            {
+				return true;
+			}
+		} else {
+			tkerr("invalid == expression");
+		}
+	}
+
+	if (consume(NOTEQ))
+    {
+		if (exprRel())
+        {
+			if (exprEqPrim())
+            {
+				return true;
+			}
+		} else {
+			tkerr("invalid != expression");
+		}
+	}
+
+	return true;
 }
 
 bool exprEq()
 {
-    Token *start = iTk;
+    Token* start = iTk;
 
-    if (exprEq())
-    {
-        if(consume(EQUAL))
-        {
-            if(exprRel())
-            {
-                return true;
-            }
-            // else
-            // {
-            //     tkerr("Invalid syntax.");
-            // }
-        }
-        else
-        {
-            tkerr("Missing = before statement.");
-        }
-    }
-    // else
-    // {
-    //     tkerr("Invalid syntax.");
-    // }
+	if (exprRel()) {
+		if (exprEqPrim()) {
+			return true;
+		}
+	}
 
-    if (exprEq())
-    {
-        if(consume(NOTEQ))
-        {
-            if(exprRel())
-            {
-                return true;
-            }
-            // else
-            // {
-            //     tkerr("Invalid syntax.");
-            // }
-        }
-        else
-        {
-            tkerr("Missing != before statement.");
-        }
-    }
-    // else
-    // {
-    //     tkerr("Invalid syntax.");
-    // }
-
-    iTk = start;
-    return exprRel();
+	iTk = start;
+	return false;
 }
 
-bool exprRel()
-{
-    Token *start = iTk;
+bool exprRelPrim() {
+	if (consume(LESS)) {
+		if (exprAdd()) {
+			if (exprRelPrim()) {
+				return true;
+			}
+		} else {
+			tkerr("invalid < expression");
+		}
+	}
 
-    if (exprRel())
-    {
-        if(consume(LESS))
-        {
-            if(exprAdd())
-            {
-                return true;
-            }
-            // else
-            // {
-            //     tkerr("Invalid expression.");
-            // }
-        }
-        else
-        {
-            tkerr("Missing < before statement.");
-        }
-    }
+	if (consume(LESSEQ)) {
+		if (exprAdd()) {
+			if (exprRelPrim()) {
+				return true;
+			}
+		} else {
+			tkerr("invalid <= expression");
+		}
+	}
 
-    if (exprRel())
-    {
-        if(consume(LESSEQ))
-        {
-            if(exprAdd())
-            {
-                return true;
-            }
-            // else
-            // {
-            //     tkerr("Invalid expression.");
-            // }
-        }
-        else
-        {
-            tkerr("Missing <= before statement.");
-        }
-    }
+	if (consume(GREATER)) {
+		if (exprAdd()) {
+			if (exprRelPrim()) {
+				return true;
+			}
+		} else {
+			tkerr("invalid > expression");
+		}
+	}
 
-    if (exprRel())
-    {
-        if(consume(GREATER))
-        {
-            if(exprAdd())
-            {
-                return true;
-            }
-            // else
-            // {
-            //     tkerr("Invalid expression.");
-            // }
-        }
-        else
-        {
-            tkerr("Missing > before statement.");
-        }
-    }
+	if (consume(GREATEREQ)) {
+		if (exprAdd()) {
+			if (exprRelPrim()) {
+				return true;
+			}
+		} else {
+			tkerr("invalid >= expression");
+		}
+	}
 
-    if (exprRel())
-    {
-        if(consume(GREATEREQ))
-        {
-            if(exprAdd())
-            {
-                return true;
-            }
-            // else
-            // {
-            //     tkerr("Invalid expression.");
-            // }
-        }
-        else
-        {
-            tkerr("Missing => before expression.");
-        }
-    }
-
-    iTk = start;
-    return exprAdd();
+	return true;
 }
 
-bool exprAdd()
-{
-    Token *start = iTk;
-    
-    if (exprAdd())
-    {
-        if(consume(ADD))
-        {
-            if(exprMul())
-            {
-                return true;
-            }
-            // else
-            // {
-            //     tkerr("Invalid expression.");
-            // }
-        }
-        else
-        {
-            tkerr("Missing + before statement.");
-        }
-    }
+bool exprRel() {
+	Token* start = iTk;
 
-    if (exprAdd())
-    {
-        if(consume(SUB))
-        {
-            if(exprMul())
-            {
-                return true;
-            }
-            // else
-            // {
-            //     tkerr("Invalid expression.");
-            // }
-        }
-        else
-        {
-            tkerr("Missing - before statement.");
-        }
-    }
+	if (exprAdd()) {
+		if (exprRelPrim()) {
+			return true;
+		}
+	}
 
-    iTk = start;
-    return exprMul();
+	iTk = start;
+	return false;
 }
 
-bool exprMul()
-{
-    Token *start = iTk;
+bool exprAddPrim() {
+	if (consume(ADD)) {
+		if (exprMul()) {
+			if (exprAddPrim()) {
+				return true;
+			}
+		} else {
+			tkerr("invlaid '+' expression");
+		}
+	}
 
-    if (exprMul())
-    {
-        if(consume(MUL))
-        {
-            if(exprCast())
-            {
-                return true;
-            }
-            // else
-            // {
-            //     tkerr("invalid expression.");
-            // }
-        }
-        else
-        {
-            tkerr("Missing * before statement.");
-        }
-    }
+	if (consume(SUB)) {
+		if (exprMul()) {
+			if (exprAddPrim()) {
+				return true;
+			}
+		} else {
+			tkerr("invalid '-' expression");
+		}
+	}
 
-    if (exprMul())
-    {
-        if(consume(DIV))
-        {
-            if(exprCast())
-            {
-                return true;
-            }
-            // else
-            // {
-            //     tkerr("invalid expression.");
-            // }
-        }
-        else
-        {
-            tkerr("Missing * before statement.");
-        }
-    }
+	return true;
+}
 
-    iTk = start;
-    return exprCast();
+bool exprAdd() {
+	Token* start = iTk;
+
+	if (exprMul()) {
+		if (exprAddPrim()) {
+			return true;
+		}
+	}
+
+	iTk = start;
+	return false;
+}
+
+bool exprMulPrim() {
+	if (consume(MUL)) {
+		if (exprCast()) {
+			if (exprMulPrim()) {
+				return true;
+			}
+		} else {
+			tkerr("invalid * expression");
+		}
+	}
+
+	if (consume(DIV)) {
+		if (exprCast()) {
+			if (exprMulPrim()) {
+				return true;
+			}
+		} else {
+			tkerr("invalid / expression");
+		}
+	}
+
+	return true;
+}
+
+bool exprMul() {
+	Token* start = iTk;
+
+	if (exprCast()) {
+		if (exprMulPrim()) {
+			return true;
+		}
+	}
+
+	iTk = start;
+	return false;
 }
 
 bool exprCast()
@@ -369,27 +328,30 @@ bool exprCast()
                 {
                     return true;
                 }
-                // else
-                // {
-                //     tkerr("Invalid syntax.");
-                // }
+                else
+                {
+                    tkerr("Invalid syntax in cast expression.");
+                }
             }
             else
             {
                 tkerr("Missing ) before syntax.");
             }
         }
-        // else
-        // {
-        //    tkerr("Invalid syntax.");
-        // }
+        else
+        {
+            tkerr("Invalid syntax in cast expression.");
+        }
     }
-    else
-    {
-        tkerr("Missing ( before syntax.");
-    }
+
     iTk = start;
-    return exprUnary();
+
+	if (exprUnary()) {
+		return true;
+	}
+
+	iTk = start;
+	return false;
 }
 
 bool exprUnary()
@@ -401,14 +363,10 @@ bool exprUnary()
         {
             return true;
         }
-        // else
-        // {
-        //     tkerr("Invalid syntax.");
-        // }
-    }
-    else
-    {
-        tkerr("Missing - before statement.");
+        else
+        {
+            tkerr("Invalid syntax after '-'.");
+        }
     }
 
     if (consume(NOT))
@@ -417,169 +375,121 @@ bool exprUnary()
         {
             return true;
         }
-        // else
-        // {
-        //     tkerr("Invalid syntax.");
-        // }
+        else
+        {
+            tkerr("Invalid syntax after '!'.");
+        }
     }
-    else
-    {
-        tkerr("Missing ! before statement.");
-    }
+   
+    iTk = start;
+
+	if (exprPostfix()) {
+		return true;
+	}
+
     iTk = start;
     return exprPostfix();
 }
 
-bool exprPrimary()
-{
-    Token *start = iTk;
 
-    if (consume(ID))
-    {
-        if (consume(LPAR))
-        { 
-            if (expr())
-            {
-                while (consume(COMMA) && expr());
-            }
-            if (!consume(RPAR))
-            {
-                tkerr("Expected ')' after function call arguments.");
-            }
-        }
-        else
-        {
-            tkerr("Missing ( before statement.");
-        }
-        return true;
-    }
-    //INT DOUBLE CHAR STRING
-    if (consume(INT))
-    {
-        return true;
-    }
-    else
-    {
-        tkerr("Error. It should be INT.");
-    }
+bool exprPrimary() {
+	Token* start = iTk;
 
-    if (consume(DOUBLE))
-    {
-        return true;
-    }
-    else
-    {
-        tkerr("Error. It should be DOUBLE.");
-    }
+	if (consume(ID)) {
+		if (consume(LPAR)) {
+			if (expr()) {
+				while (consume(COMMA)) {
+					if (expr()) {
+					} else {
+						tkerr("invalid or missing expression after ','");
+					}
+				}
+			} else {
+				tkerr("invalid or missing expression after '('");
+			}
 
-    if (consume(CHAR))
-    {
-        return true;
-    }
-    else
-    {
-        tkerr("Error. It should be CHAR.");
-    }
+			if (consume(RPAR)) {
+				return true;
+			} else {
+				tkerr("missing ')' in expression");
+			}
+		}
 
-    if (consume(STRING))
-    {
-        return true;
-    }
-    else
-    {
-        tkerr("Error. It should be STRING.");
-    }
+		return true;
+	}
 
-    // if (consume(LPAR))
-    // {
-    //     if (!expr())
-    //     {
-    //         err("Expected expression inside parentheses");
-    //     }
-    //     if (!consume(RPAR))
-    //     {
-    //         tkerr("Expected closing ) after expression");
-    //     }
-    //     return true;
-    // }
+	iTk = start;
 
-    iTk = start;
-    return false;
+	if (consume(INT) || consume(DOUBLE) || consume(CHAR) || consume(STRING)) {
+		return true;
+	}
+
+	iTk = start;
+
+	if (consume(LPAR)) {
+		if (expr()) {
+			if (consume(RPAR)) {
+				return true;
+			} else {
+				tkerr("missing ')' after expression");
+			}
+		} else {
+			tkerr("invalid or missing expression after '('");
+		}
+	}
+
+	iTk = start;
+	return false;
 }
 
-bool exprPostfix()
-{
-    Token *start = iTk;
+bool exprPostfixPrim() {
+	Token* start = iTk;
 
-    if (exprPrimary())
-    {
-        return true;
-    }
-    // else
-    // {
-    //     tkerr("Invalid syntax.");
-    // }
+	if (consume(LBRACKET)) {
+		if (expr()) {
+			if (consume(RBRACKET)) {
+				if (exprPostfixPrim()) {
+					return true;
+				}
+			} else {
+				tkerr("missing '(' in expression");
+			}
+		} else {
+			tkerr("missing or invalid expression after '('");
+		}
+	}
 
-    if (exprPostfix())
-    {
-        if(consume(LBRACKET))
-        {
-            if(expr())
-            {
-                if(consume(RBRACKET))
-                {
-                    return true;
-                }
-                // else
-                // {
-                //     tkerr("Missing ] before statement.");
-                // }
-            }
-            // else
-            // {
-            //     tkerr("Invalid syntax.");
-            // }
-        }
-        else
-        {
-            tkerr("Missing [ before statement.");
-        }
-    }
-    // else
-    // {
-    //     tkerr("Invalid syntax.");
-    // }
+	iTk = start;
 
-    if (exprPostfix())
-    {
-        if(consume(DOT))
-        {
-            if(consume(ID))
-            {
-                return true;
-            }
-            else
-            {
-                tkerr("Invalid ID.");
-            }
-        }
-        else
-        {
-            tkerr("Missing . before statement.");
-        }
-    }
-    // else
-    // {
-    //     tkerr("invlaid syntax.");
-    // }
-    
-    iTk = start;
-    return false;
+	if (consume(DOT)) {
+		if (consume(ID)) {
+			if (exprPostfixPrim()) {
+				return true;
+			}
+		} else {
+			tkerr("missing or invalid identifier after '.'");
+		}
+	}
+
+	return true;
 }
 
+bool exprPostfix() {
+	Token* start = iTk;
+
+	if (exprPrimary()) {
+		if (exprPostfixPrim()) {
+			return true;
+		}
+	}
+
+	iTk = start;
+	return false;
+}
 char *tkCodeName(int code)
 {
-    switch (code) {
+    switch (code)
+    {
         case ASSIGN: return "ASSIGN";
         case OR: return "OR";
         case AND: return "AND";
@@ -635,32 +545,36 @@ bool consume(int code)
     return false;
 }
 
-bool structDef()
-{
-    if (consume(STRUCT))
-    {
-        if(consume(ID))
-        {
-            if(consume(LACC))
-            {
-                while (varDef());
-                return consume(RACC) && consume(SEMICOLON);
-            }
-            else
-            {
-                tkerr("Missing { before statement.");
-            }
-        }
-        else
-        {
-            tkerr("Invalid syntax.");
-        }
-    }
-    else
-    {
-        tkerr("Invalid STRUCT type.");
-    }
-    return false;
+bool structDef() {
+	Token* start = iTk;
+	if (consume(STRUCT)) {
+		if (consume(ID)) {
+			if (consume(LACC)) {
+				while (varDef());
+
+				if (consume(RACC)) {
+					if (consume(SEMICOLON)) {
+						return true;
+					} else {
+						tkerr("missing ';' after '}'");
+					}
+				} else {
+					tkerr("missing '}' in struct");
+				}
+			} else {
+				if (iTk->code == ID) {
+					iTk = start;
+					return false;
+				}
+				tkerr("missing '{' after identifer in struct");
+			}
+		} else {
+			tkerr("invalid or missing indentifier after struct");
+		}
+	}
+
+	iTk = start;
+	return false;
 }
 
 bool varDef()
@@ -670,19 +584,19 @@ bool varDef()
     {
         if(consume(ID))
         {
-            arrayDecl();
+            if(arrayDecl()){}
             if (consume(SEMICOLON))
             {
                 return true;
             }
             else
             {
-                tkerr("Missing ; at the end od the line.");
+                tkerr("Missing semicolon ';' after variable declaration.");
             }
         }
         else
         {
-            tkerr("invalid ID");
+            tkerr("Expected identifier after type.");
         }
     }
     // else
@@ -693,153 +607,77 @@ bool varDef()
     return false;
 }
 
-bool fnDef()
-{
-    Token *start = iTk;
-    if (typeBase())
-    {
-        if(consume(ID))
-        {
-            if(consume(LPAR))
-            {
-                fnParam();
-                while (consume(COMMA) && fnParam());
-                if (consume(RPAR))
-                {
-                    if(stmCompound())
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        tkerr("Invalid syntax.");
-                    }
-                }
-                else
-                {
-                    tkerr("Missing ) before statement.");
-                }
-            }
-            else
-            {
-                tkerr("Missing ( before statement.");
-            }
-        }
-        else
-        {
-            tkerr("Missing ID");
-        }
-    }
-    // else
-    // {
-    //     tkerr("Invalid syntax.");
-    // }
+bool fnDef() {
+	Token* start = iTk;
 
-    if (consume(VOID))
-    {
-        if(consume(ID))
-        {
-            if(consume(LPAR))
-            {
-                fnParam();
-                while (consume(COMMA) && fnParam());
-                if (consume(RPAR))
-                {
-                    if(stmCompound())
-                    {
-                        return true;
-                    }
-                    // else
-                    // {
-                    //     tkerr("Invalid syntax.");
-                    // }
-                }
-                else
-                {
-                    tkerr("Missing ) before statement.");
-                }
-            }
-            else
-            {
-                tkerr("Missing ( before statement.");
-            }
-        }
-        else
-        {
-            tkerr("Missing ID");
-        }
-    }
-    else
-    {
-        tkerr("Invalid VOID syntax.");
-    }
+	if (typeBase() || consume(VOID)) {
+		if (consume(ID)) {
+			if (consume(LPAR)) {
+				if (fnParam()) {
+					while (consume(COMMA)) {
+						if (fnParam()) {
+						} else {
+							tkerr("invalid or missing parameter after ','");
+						}
+					}
+				}
+				if (consume(RPAR)) {
+					if (stmCompound()) {
+						return true;
+					} else {
+						tkerr("invalid or missing statement in function definition");
+					}
+				} else {
+					tkerr("missing ')' in function definition");
+				}
+			}
+		} else {
+			tkerr("missing or invalid identifier in function definition");
+		}
+	}
 
-    iTk = start;
-    return false;
+	iTk = start;
+	return false;
 }
+
 
 bool unit()
 {
-    for(;;)
+    while(true)
     { 
         if(structDef()){}
         else if(fnDef()){}
         else if(varDef()){}
-        else break;
+        else {
+            break;
+        }
     }
     
-    if(consume(END))
-    {
+    if(consume(END)){
         return true;
-    }
-    else
-    {
-        tkerr("Invalid EOF or \\0");
     }
     return true;
 }
 
 bool typeBase()
 {
-    if(consume(TYPE_INT))
-    {
+    Token* start = iTk;
+    if(consume(TYPE_INT)){
         return true;
     }
-    else
-    {
-        tkerr("Incorrect declaration type (Should be INT).");        
-    }
-    if(consume(TYPE_DOUBLE))
-    {
+    if(consume(TYPE_DOUBLE)){
         return true;
     }
-    else
-    {
-        tkerr("Incorrect declaration type (Should be DOUBLE).");        
-    }
-    if(consume(TYPE_CHAR))
-    {
+    if(consume(TYPE_CHAR)){
         return true;
     }
-    else
-    {
-        tkerr("Incorrect declaration type (Should be CHAR).");        
-    }
-    if(consume(STRUCT))
-    {
-        if(consume(ID))
-        {
+    if(consume(STRUCT)){
+        if(consume(ID)){
             return true;
         }
-        else
-        {
-            tkerr("Invalid format.");
-        }
     }
-    else
-    {
-        tkerr("Incorrect declaration type (Should be STRUCT).");        
-    }
+
+    iTk = start;
     return false;
 }
 
@@ -848,13 +686,17 @@ bool arrayDecl()
     Token *start = iTk;
     if (consume(LBRACKET))
     {
-        consume(INT);
-        return consume(RBRACKET);
+        if(consume(INT)){}
+        if (consume(RBRACKET)) {
+            return true;
+        }else{
+            tkerr("Missing ] before statement.");
+        }
     }
-    else
-    {
-        tkerr("Missing [ before statement.");
-    }
+    // else
+    // {
+    //     tkerr("Missing [ before statement.");
+    // }
     iTk = start;
     return false;
 }
@@ -866,130 +708,130 @@ bool fnParam()
     {
         if(consume(ID))
         {
-            if(arrayDecl())
-            { 
-                return true;
+            if(arrayDecl()){ 
             }
-            // else
-            // {
-            //     tkerr("Invalid syntax.");
-            // }
-        }
+            return true;
+		}
         else
         {
-            tkerr("Invalid ID.");
+            tkerr("invalid or missing indentifier in function parameter.");
         }
     }
-    // else
-    // {
-    //     tkerr("Invalid syntax.");
-    // }
     iTk=start;
     return false;
 }
 
 bool stm()
 {
-    if (stmCompound()) return true;
-    
-    if (consume(IF))
-    {
-        if(consume(LPAR))
-        {
-            if(expr())
-            {
-                if(consume(RPAR))
-                {
-                    if(stm())
-                    {
-                        consume(ELSE) && stm();
-                        return true;
-                    }
-                    else
-                    {
-                        tkerr("Missing or invalid expression in else statement.");
-                    }
-                }
-                else
-                {
-                    tkerr("Missing or invalid expression in ) statement.");
-                }
-            }
-            // else
-            // {
-            //     tkerr("Invalid expression.");
-            // }
-        }
-        else
-        {
-            tkerr("Missing ( before statement.");
-        }
-    }
+    Token* start = iTk;
 
-    if (consume(WHILE))
-    {
-        if(consume(LPAR))
-        {
-            if(expr())
-            {
-                if(consume(RPAR))
-                {
-                    if(stm())
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        tkerr("Missing or invalid expression in else statement.");
-                    }
-                }
-                else
-                {
-                    tkerr("Missing ) before statement.");
-                }
-            }
-            else
-            {
-                tkerr("Invalid statement.");
-            }
-        }
-        else
-        {
-            tkerr("Missing ( before statement.");
-        }
-    }
+	if (stmCompound()) {
+		return true;
+	}
 
-    if (consume(RETURN))
-    {
-        expr();
-        return consume(SEMICOLON);
-    }
-    else
-    {
-        tkerr("Invalid RETURN.");
-    }
+	iTk = start;
 
-    if (expr()) 
-    {
-        return consume(SEMICOLON);
-    }
-    else
-    {
-        tkerr("Invalid expression.");
-    }
-    return consume(SEMICOLON);
+	if (consume(IF)) {
+		if (consume(LPAR)) {
+			if (expr()) {
+				if (consume(RPAR)) {
+					if (stm()) {
+						if (consume(ELSE)) {
+							if (stm()) {
+								return true;
+							} else {
+								tkerr("missing or invalid statement in ELSE branch");
+							}
+						}
+						return true;
+					} else {
+						tkerr("invalid or missing satement in IF statement");
+					}
+				} else {
+					tkerr("missing ')' after expression in IF");
+				}
+			} else {
+				tkerr("missing or invalid expression in IF");
+			}
+		} else {
+			tkerr("missing '(' after 'if'");
+		}
+	}
+
+	iTk = start;
+
+	if (consume(WHILE)) {
+		if (consume(LPAR)) {
+			if (expr()) {
+				if (consume(RPAR)) {
+					if (stm()) {
+						return true;
+					} else {
+						tkerr("invalid or missing statement in WHILE statement");
+					}
+				} else {
+					tkerr("missing ')' in WHILE statement");
+				}
+			} else {
+				tkerr("missing or invalid expression in WHILE statement");
+			}
+		} else {
+			tkerr("missing '(' in WHILE satement");
+		}
+	}
+
+	iTk = start;
+
+	if (consume(RETURN)) {
+		if (expr()){}
+		if (consume(SEMICOLON)) {
+			return true;
+		} else {
+			tkerr("missing ';' after RETURN statement");
+		}
+	}
+
+	iTk = start;
+
+	if (consume(SEMICOLON)) {
+		return true;
+	}
+
+	if (expr()) {
+		if (consume(SEMICOLON)) {
+			return true;
+		} else {
+			tkerr("missing ';' after statement");
+		}
+	}
+
+	iTk = start;
+	return false;
 }
 
 bool stmCompound()
 {
-    if (consume(LACC))
-    {
-        while (varDef() || stm());
-        return consume(RACC);
-    }
-    else
-    {
-        tkerr("Missing { before statement.");
-    }
-    return false;
+    Token* start = iTk;
+
+	if (consume(LACC)) {
+		while (true) {
+			if (varDef()) {} 
+			else if (stm()) {}
+			else {
+				break;
+			}
+		}
+		if (consume(RACC)) {
+			return true;
+		} else {
+			tkerr("missing '}' after statement");
+		}
+	}
+
+	iTk = start;
+	return false;
 }
+
+#pragma GCC diagnostic pop
+
+//LA IMPLEMENTAREA MEA NU E CEVA BINE

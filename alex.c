@@ -11,8 +11,9 @@ int main(void)
     Token *tokens = tokenize(pch);
 
     showTokens(tokens);
+    showTokensTerminal(tokens);
     parse(tokens);
-    printf("Parsare completa.\n");
+    printf("Parsing completed.\n");
     
     free(pch);
     return 0;
