@@ -1,5 +1,4 @@
 1	STRUCT
-1	ID:Pt
 1	LACC
 2	TYPE_INT
 2	ID:x

@@ -75,7 +75,7 @@ int symbolsLen(Symbol *list){
 void freeSymbol(Symbol *s){
 	switch(s->kind){
 		case SK_VAR:
-			if(!s->owner)free(s->varMem);
+			if(!s->owner) free(s->varMem);
 			break;
 		case SK_FN:
 			freeSymbols(s->fn.params);
@@ -84,9 +84,14 @@ void freeSymbol(Symbol *s){
 		case SK_STRUCT:
 			freeSymbols(s->structMembers);
 			break;
-		}
-	free(s);
+	
+			// ✅ Add this missing case to silence the warning:
+		case SK_PARAM:
+				// Nothing to free specific to SK_PARAM
+			break;
 	}
+	free(s);
+}
 
 Domain *pushDomain(){
 	Domain *d=(Domain*)safeAlloc(sizeof(Domain));
