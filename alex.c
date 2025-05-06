@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "parser.h"
 #include "ad.h"
+#include "at.h"
 
 int main(void)
 {
@@ -14,9 +15,7 @@ int main(void)
     //showTokens(tokens);
     //showTokensTerminal(tokens);
     pushDomain();
-
     parse(tokens);
-    
     showDomain(symTable, "global");
     while (symTable) {
         dropDomain();

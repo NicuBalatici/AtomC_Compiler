@@ -21,7 +21,7 @@ double sum(double x[5],int n){
 		n=x[i];
 		r=r+n;
 		i=i+1;
-		}
+	}
 	return r;
 	}
 	

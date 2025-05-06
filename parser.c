@@ -606,52 +606,50 @@ bool consume(int code)
 bool structDef() {
     Token* start = iTk;
 
-    if (consume(STRUCT)) {
-        Token* tkName = iTk;
-        if (consume(ID)) {
-            // Semantic: Check for redefinition
-            Symbol* s = findSymbolInDomain(symTable, tkName->text);
-            if (s) tkerr("symbol redefinition: %s", tkName->text);
-            
-            // Semantic: Add struct symbol
-            s = addSymbolToDomain(symTable, newSymbol(tkName->text, SK_STRUCT));
-            s->type.tb = TB_STRUCT;
-            s->type.s = s;
-            s->type.n = -1;
-            pushDomain();
-            owner = s;
-
-            if (consume(LACC)) {
-                while (varDef());
-
-                if (consume(RACC)) {
-                    if (consume(SEMICOLON)) {
-                        // Semantic: cleanup
-                        owner = NULL;
-                        dropDomain();
-                        return true;
-                    } else {
-                        tkerr("missing ; after }");
-                    }
-                } else {
-                    tkerr("missing } in struct");
-                }
-                owner = NULL; // Ensure cleanup even on error
-                dropDomain();
-            } else {
-                if (iTk->code == ID) {
-                    iTk = start;
-                    return false;
-                }
-                tkerr("missing { after identifier in struct");
-            }
-        } else {
-            tkerr("invalid or missing identifier after struct");
-        }
+    if (!consume(STRUCT)) {
+        iTk = start;
+        return false;
     }
 
-    iTk = start;
-    return false;
+    Token* tkName = iTk;
+    if (!consume(ID)) {
+        tkerr("invalid or missing identifier after struct");
+    }
+
+    // Lookahead: only define struct if it's a full definition
+    if (!consume(LACC)) {
+        iTk = start;
+        return false;  // it's just a declaration (e.g., `struct S1 p1;`)
+    }
+
+    // Now it's a *definition*, so check and add the symbol
+    Symbol* s = findSymbolInDomain(symTable, tkName->text);
+    if (s) {
+        tkerr("symbol redefinition: %s", tkName->text);
+    }
+
+    s = addSymbolToDomain(symTable, newSymbol(tkName->text, SK_STRUCT));
+    s->type.tb = TB_STRUCT;
+    s->type.s = s;
+    s->type.n = -1;
+
+    pushDomain();
+    owner = s;
+
+    while (varDef());  // struct fields
+
+    if (!consume(RACC)) {
+        tkerr("missing '}' in struct");
+    }
+
+    dropDomain();
+    owner = NULL;
+
+    if (!consume(SEMICOLON)) {
+        tkerr("missing ';' after struct definition");
+    }
+
+    return true;
 }
 
 // bool varDef()
@@ -698,7 +696,6 @@ bool varDef() {
             }
 
             if (consume(SEMICOLON)) {
-                // Semantic: Check for redefinition
                 Symbol* var = findSymbolInDomain(symTable, tkName->text);
                 if (var)
                     tkerr("symbol redefinition: %s", tkName->text);
