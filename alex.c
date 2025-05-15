@@ -9,7 +9,7 @@
 
 int main(void)
 {
-    char *pch = loadFile("tests/testad.c");
+    char *pch = loadFile("tests/testat.c");
     Token *tokens = tokenize(pch);
 
     //showTokens(tokens);

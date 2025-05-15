@@ -7,6 +7,7 @@
 #include "parser.h"
 #include "lexer.h"
 #include "ad.h"
+#include "at.h"
 
 Token *iTk;
 Token *consumedTk;
@@ -32,454 +33,357 @@ void parse(Token *tokens)
     }
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Winfinite-recursion"
-
-bool expr()
-{
-    Token* start = iTk;
-
-	if (exprAssign()) {
+bool expr(Ret *r){
+	Token *start = iTk;
+	if(exprAssign(r)){
 		return true;
 	}
-
 	iTk = start;
 	return false;
 }
 
-bool exprAssign()
-{
-    Token *start = iTk;
-    if (exprUnary())
-    {
-        if(consume(ASSIGN))
-        {
-            if(exprAssign())
-            {
-                return true;
-            }
-            else
-            {
-                tkerr("Invalid ASSIGN syntax.");
-            }
-        }
-    }
-    // else
-    // {
-    //     tkerr("Missing = before statement.");
-    // }
+bool exprAssign(Ret *r){
+	Ret rDst;
+	Token *start = iTk;
+	if(exprUnary(&rDst)){
+		if(consume(ASSIGN)){
+			if(exprAssign(r)){
+				if(!rDst.lval)tkerr("the assign destination must be a left-value");
+                if(rDst.ct)tkerr("the assign destination cannot be constant");
+                if(!canBeScalar(&rDst))tkerr("the assign destination must be scalar");
+                if(!canBeScalar(r))tkerr("the assign source must be scalar");
+                if(!convTo(&r->type,&rDst.type))tkerr("the assign source cannot be converted to destination");
+                r->lval=false;
+                r->ct=true;
+				return true;
+			}else tkerr("no expression after assign operator");
+		}
+		iTk=start;
+	}
+	if(exprOr(r)){
+		return true;
+	}
+
     iTk = start;
-
-	if (exprOr()) {
-		return true;
-	}
-
-	iTk = start;
 	return false;
-}
+} 
 
-bool exprOrPrim() {
-	if (consume(OR)) {
-		if (exprAnd()) {
-			if (exprOrPrim()) {
-				return true;
-			}
-		} else {
-			tkerr("invalid || expression");
-		}
-	}
-
-	return true;
-}
-
-bool exprOr()
-{
-    Token* start = iTk;
-
-	if (exprAnd())
-    {
-		if (exprOrPrim())
-        {
-			return true;
-		}
-	}
-
-	iTk = start;
-	return false;
-}
-
-bool exprAndPrim() {
-	if (consume(AND))
-    {
-		if (exprEq())
-        {
-			if (exprAndPrim())
-            {
-				return true;
-			}
-		} else {
-			tkerr("invalid && expression");
-		}
-	}
-
-	return true;
-}
-
-bool exprAnd()
-{
-    Token* start = iTk;
-
-	if (exprEq())
-    {
-		if (exprAndPrim())
-        {
-			return true;
-		}
-	}
-
-	iTk = start;
-	return false;
-}
-
-bool exprEqPrim()
-{
-	if (consume(EQUAL))
-    {
-		if (exprRel())
-        {
-			if (exprEqPrim())
-            {
-				return true;
-			}
-		} else {
-			tkerr("invalid == expression");
-		}
-	}
-
-	if (consume(NOTEQ))
-    {
-		if (exprRel())
-        {
-			if (exprEqPrim())
-            {
-				return true;
-			}
-		} else {
-			tkerr("invalid != expression");
-		}
-	}
-
-	return true;
-}
-
-bool exprEq()
-{
-    Token* start = iTk;
-
-	if (exprRel()) {
-		if (exprEqPrim()) {
-			return true;
-		}
-	}
-
-	iTk = start;
-	return false;
-}
-
-bool exprRelPrim() {
-	if (consume(LESS)) {
-		if (exprAdd()) {
-			if (exprRelPrim()) {
-				return true;
-			}
-		} else {
-			tkerr("invalid < expression");
-		}
-	}
-
-	if (consume(LESSEQ)) {
-		if (exprAdd()) {
-			if (exprRelPrim()) {
-				return true;
-			}
-		} else {
-			tkerr("invalid <= expression");
-		}
-	}
-
-	if (consume(GREATER)) {
-		if (exprAdd()) {
-			if (exprRelPrim()) {
-				return true;
-			}
-		} else {
-			tkerr("Missing or invalid expression after >.");
-		}
-	}
-
-	if (consume(GREATEREQ)) {
-		if (exprAdd()) {
-			if (exprRelPrim()) {
-				return true;
-			}
-		} else {
-			tkerr("invalid >= expression");
-		}
-	}
-
-	return true;
-}
-
-bool exprRel() {
+bool exprOr(Ret *r){
 	Token* start = iTk;
-
-	if (exprAdd()) {
-		if (exprRelPrim()) {
+	if(exprAnd(r)){
+		if(exprOrPrim(r)){
 			return true;
 		}
 	}
+	iTk = start;
+	return false;
 
+}
+
+bool exprOrPrim(Ret *r) {
+	Token *start = iTk;
+    if (consume(OR)) {
+		Ret right;
+        if (exprAnd(&right)) {
+            Type tDst;
+            if(!arithTypeTo(&r->type,&right.type,&tDst)) {
+                char errorMsg[100];
+                sprintf(errorMsg, "invalid operand type for || at line %d", iTk->line);
+                tkerr(errorMsg);
+            }
+            *r=(Ret){{TB_INT,NULL,-1},false,true};
+            exprOrPrim(r);
+            return true;
+        }else tkerr("no expression after or operator");
+    }
+	iTk = start;
+    return true;
+}
+
+bool exprAnd(Ret *r) {
+    Token* start = iTk;
+	if(exprEq(r)){
+		if(exprAndPrim(r)){
+			return true;
+		}
+	}
 	iTk = start;
 	return false;
 }
 
-bool exprAddPrim() {
-	if (consume(ADD)) {
-		if (exprMul()) {
-			if (exprAddPrim()) {
-				return true;
-			}
-		} else {
-			tkerr("invlaid '+' expression");
-		}
-	}
-
-	if (consume(SUB)) {
-		if (exprMul()) {
-			if (exprAddPrim()) {
-				return true;
-			}
-		} else {
-			tkerr("invalid '-' expression");
-		}
-	}
-
-	return true;
+bool exprAndPrim(Ret *r) {
+    if (consume(AND)) {
+		Ret right;
+        if (exprEq(&right)) {
+            Type tDst;
+            if (!arithTypeTo(&r->type, &right.type, &tDst))
+                tkerr("invalid operand type for &&");
+            *r = (Ret) {{TB_INT, NULL, -1}, false, true};
+            exprAndPrim(r);
+            return true;
+        }tkerr("No expression after and operator");
+    }
+    return true;
 }
 
-bool exprAdd() {
+bool exprEq(Ret *r) {
+    Token* start = iTk;
+	if(exprRel(r)){
+		if(exprEqPrim(r)){
+			return true;
+		}
+	}
+	iTk = start;
+	return false;
+}
+
+bool exprEqPrim(Ret *r) {
+    if (consume(EQUAL) || consume(NOTEQ)) { 
+		Ret right;
+        if (exprRel(&right)) {
+            Type tDst;
+            if(!arithTypeTo(&r->type,&right.type,&tDst))
+                tkerr("invalid operand type for == or!=");
+            *r=(Ret){{TB_INT,NULL,-1},false,true};
+            exprEqPrim(r);
+            return true;
+        }else tkerr("No expression after equality operator");
+    }
+    return true; 
+}
+
+bool exprRel(Ret *r) {
+    Token* start = iTk;
+	if(exprAdd(r)){
+		if(exprRelPrim(r)){
+			return true;
+		}
+	}
+	iTk = start;
+	return false;
+}
+
+bool exprRelPrim(Ret *r) {
+    if (consume(LESS) || consume(LESSEQ) || consume(GREATER) || consume(GREATEREQ)) { 
+		Ret right;
+        if (exprAdd(&right)) {
+            Type tDst;
+			if(!arithTypeTo(&r->type,&right.type,&tDst))tkerr("invalid operand type for <, <=, >,>=");
+			*r=(Ret){{TB_INT,NULL,-1},false,true};
+			exprRelPrim(r);
+			return true;
+        }tkerr("No expression after relation operator");
+    }
+    return true;
+}
+
+
+bool exprAdd(Ret *r) {
+    Token* start = iTk;
+	if(exprMul(r)){
+		if(exprAddPrim(r)){
+			return true;
+		}
+	}
+	iTk = start;
+	return false;
+}
+
+bool exprAddPrim(Ret *r) {
+    if (consume(ADD) || consume(SUB)) { 
+		Ret right;
+        if (exprMul(&right)) {
+            Type tDst;
+			if(!arithTypeTo(&r->type,&right.type,&tDst))tkerr("invalid operand type for + or -");
+			*r=(Ret){tDst,false,true};
+			exprAddPrim(r);
+			return true;
+        }tkerr("No expression after adder operator");
+    }
+    return true; 
+}
+
+
+bool exprMul(Ret *r) {
+    Token* start = iTk;
+	if(exprCast(r)){
+		if(exprMulPrim(r)){
+			return true;
+		}
+	}
+	iTk = start;
+	return false;
+}
+
+bool exprMulPrim(Ret *r) {
+    if (consume(MUL) || consume(DIV)) {
+		Ret right;
+        if (exprCast(&right)) {
+            Type tDst;
+			if(!arithTypeTo(&r->type,&right.type,&tDst))tkerr("invalid operand type for * or /");
+			*r=(Ret){tDst,false,true};
+			exprMulPrim(r);
+			return true;
+        }else tkerr("No expression after multiplier operator");
+    }
+    return true;
+}
+
+bool exprCast(Ret *r){
 	Token* start = iTk;
-
-	if (exprMul()) {
-		if (exprAddPrim()) {
-			return true;
-		}
-	}
-
-	iTk = start;
-	return false;
-}
-
-bool exprMulPrim() {
-	if (consume(MUL)) {
-		if (exprCast()) {
-			if (exprMulPrim()) {
-				return true;
-			}
-		} else {
-			tkerr("invalid * expression");
-		}
-	}
-
-	if (consume(DIV)) {
-		if (exprCast()) {
-			if (exprMulPrim()) {
-				return true;
-			}
-		} else {
-			tkerr("invalid / expression");
-		}
-	}
-
-	return true;
-}
-
-bool exprMul() {
-	Token* start = iTk;
-
-	if (exprCast()) {
-		if (exprMulPrim()) {
-			return true;
-		}
-	}
-
-	iTk = start;
-	return false;
-}
-
-bool exprCast() {
-    Token *start = iTk;
-
-    if (consume(LPAR)) {
-        Type t;
-        if (typeBase(&t)) {
-            arrayDecl(&t); // optional, so no need to check return value
-            if (consume(RPAR)) {
-                if (exprCast()) {
-                    // Optionally mark this node as a cast with type `t`
+	if(consume(LPAR)){
+		Type t;
+		Ret op;
+		if(typeBase(&t)){
+			if(arrayDecl(&t)) {}
+            if(consume(RPAR)) {
+                if(exprCast(&op)) {
+                    if(t.tb==TB_STRUCT)tkerr("cannot convert to a struct type");
+                    if(op.type.tb==TB_STRUCT)tkerr("cannot convert a struct");
+                    if(op.type.n>=0&&t.n<0)tkerr("an array can be converted only to another array");
+                    if(op.type.n<0&&t.n>=0)tkerr("a scalar can be converted only to another scalar");
+                    *r=(Ret){t,false,true};
                     return true;
-                } else {
-                    tkerr("Expected expression after cast type.");
                 }
-            } else {
-                tkerr("Expected ')' after type in cast expression.");
-            }
-        } else {
-            tkerr("Expected type name after '(' in cast expression.");
+            }else tkerr("Missing ) from cast expression");
         }
-        iTk = start; // backtrack if cast fails
-        return false;
-    }
-
-    // Try the alternative: exprUnary
-    if (exprUnary()) return true;
-
-    iTk = start;
-    return false;
-}
-
-bool exprUnary()
-{
-    Token *start = iTk;
-    if (consume(SUB))
-    {
-        if(exprUnary())
-        {
-            return true;
-        }
-        else
-        {
-            tkerr("Invalid syntax after '-'.");
-        }
-    }
-
-    if (consume(NOT))
-    {
-        if(exprUnary())
-        {
-            return true;
-        }
-        else
-        {
-            tkerr("Invalid syntax after '!'.");
-        }
-    }
-   
-    iTk = start;
-
-	if (exprPostfix()) {
+	}
+	
+	if (exprUnary(r)){
 		return true;
 	}
-
-    iTk = start;
-    return exprPostfix();
-}
-
-
-bool exprPrimary() {
-	Token* start = iTk;
-
-	if (consume(ID)) {
-		if (consume(LPAR)) {
-			if (expr()) {
-				while (consume(COMMA)) {
-					if (expr()) {
-					} else {
-						tkerr("invalid or missing expression after ,");
-					}
-				}
-			} else {
-				tkerr("invalid or missing expression after (");
-			}
-
-			if (consume(RPAR)) {
-				return true;
-			} else {
-				tkerr("missing ) in expression");
-			}
-		}
-
-		return true;
-	}
-
-	iTk = start;
-
-	if (consume(INT) || consume(DOUBLE) || consume(CHAR) || consume(STRING)) {
-		return true;
-	}
-
-	iTk = start;
-
-	if (consume(LPAR)) {
-		if (expr()) {
-			if (consume(RPAR)) {
-				return true;
-			} else {
-				tkerr("missing ')' after expression");
-			}
-		} else {
-			tkerr("invalid or missing expression after '('");
-		}
-	}
-
 	iTk = start;
 	return false;
 }
 
-bool exprPostfixPrim() {
+bool exprUnary(Ret *r){
 	Token* start = iTk;
-
-	if (consume(LBRACKET)) {
-		if (expr()) {
-			if (consume(RBRACKET)) {
-				if (exprPostfixPrim()) {
-					return true;
-				}
-			} else {
-				tkerr("missing '(' in expression");
-			}
-		} else {
-			tkerr("missing or invalid expression after '('");
-		}
+	if(consume(SUB)|| consume(NOT)){
+		if(exprUnary(r)){
+			if(!canBeScalar(r))tkerr("unary - or ! must have a scalar operand");
+			r->lval=false;
+			r->ct=true;
+			return true;
+		}else tkerr("no expression after unary operator");
 	}
-
+	if(exprPostfix(r)){
+		return true;
+	}
 	iTk = start;
-
-	if (consume(DOT)) {
-		if (consume(ID)) {
-			if (exprPostfixPrim()) {
-				return true;
-			}
-		} else {
-			tkerr("missing or invalid identifier after '.'");
-		}
-	}
-
-	return true;
+	return false;
 }
 
-bool exprPostfix() {
-	Token* start = iTk;
 
-	if (exprPrimary()) {
-		if (exprPostfixPrim()) {
+bool exprPrimary(Ret *r){
+	Token* start = iTk;
+	if(consume(ID)){
+		Token *tkName = consumedTk;
+        Symbol *s=findSymbol(tkName->text);
+        if(!s)tkerr("undefined id: %s",tkName->text);
+		if(consume(LPAR)){
+			if(s->kind!=SK_FN)tkerr("only a function can be called");
+			Ret rArg;
+			Symbol *param=s->fn.params;
+			if(expr(&rArg)){
+				if(!param)tkerr("too many arguments in function call");
+                if(!convTo(&rArg.type,&param->type))
+                    tkerr("in call, cannot convert the argument type to the parameter type");
+                param=param->next;
+				for(;;) {
+                    if(consume(COMMA)) {
+                        if(expr(&rArg)) {
+                            if(!param)tkerr("too many arguments in function call");
+                            if(!convTo(&rArg.type,&param->type))
+                                tkerr("in call, cannot convert the argument type to the parameter type");
+                            param=param->next;
+                        }else tkerr("Missing expression after ,");
+                    }else break;
+                }
+			}else tkerr("Missing expression after (");
+			if(consume(RPAR)){
+				if(param)tkerr("too few arguments in function call");
+                *r=(Ret){s->type,false,true};
+                return true;
+			}else tkerr("Missing )");
+		}
+		if(s->kind==SK_FN)tkerr("a function can only be called");
+        *r=(Ret){s->type,true,s->type.n>=0};
+		return true;
+	}
+	else if(consume(DOUBLE)){
+		 *r=(Ret){{TB_DOUBLE,NULL,-1},false,true};
+		return true;
+	}
+	else if(consume(CHAR)){
+		*r=(Ret){{TB_CHAR,NULL,-1},false,true};
+		return true;
+	}
+	else if(consume(STRING)){
+		*r=(Ret){{TB_CHAR,NULL,0},false,true};
+		return true;
+	}
+	else if(consume(INT)){
+		*r=(Ret){{TB_INT,NULL,-1},false,true};
+		return true;
+	}
+	else if(consume(LPAR)){
+		if(expr(r)){
+			if(consume(RPAR)){
+				return true;
+			}else tkerr("Missing )");
+		}else tkerr("Missing expression after (");
+	}
+
+    iTk = start;
+	return false;
+}
+
+bool exprPostfix(Ret *r) {
+    Token* start = iTk;
+	if(exprPrimary(r)){
+		if(exprPostfixPrim(r)){
 			return true;
 		}
 	}
-
 	iTk = start;
 	return false;
 }
+
+bool exprPostfixPrim(Ret *r){
+	Token* start = iTk;
+	if(consume(LBRACKET)){
+		Ret idx;
+		if(expr(&idx)){
+			if(consume(RBRACKET)){
+				if(r->type.n<0)
+                    tkerr("only an array can be indexed");
+                Type tInt={TB_INT,NULL,-1};
+                if(!convTo(&idx.type,&tInt))tkerr("the index is not convertible to int");
+                r->type.n=-1;
+                r->lval=true;
+                r->ct=false;
+                exprPostfixPrim(r);
+                return true;
+			}else tkerr("lipseste ]");
+		}
+		iTk=start;
+	}
+	if(consume(DOT)){
+		if(consume(ID)){
+			Token *tkName = consumedTk;
+                if(r->type.tb!=TB_STRUCT)tkerr("a field can only be selected from a struct");
+                Symbol *s=findSymbolInList(r->type.s->structMembers,tkName->text);
+                if(!s)
+                    tkerr("the structure %s does not have a field%s",r->type.s->name,tkName->text);
+                *r=(Ret){s->type,true,s->type.n>=0};
+                exprPostfixPrim(r);
+                return true;
+		}else tkerr("missing ID after .");
+		iTk=start;
+	}
+	return true;
+}
+
 char *tkCodeName(int code)
 {
     switch (code)
@@ -525,17 +429,13 @@ char *tkCodeName(int code)
 
 bool consume(int code)
 {
-    // printf("consume(%s) ",tkCodeName(code));
 
-    if(iTk->code==code)
-    {
+    if(iTk->code==code){
         consumedTk=iTk;
         iTk=iTk->next;
-        // printf(" => consumed\n");
         return true;
     }
 
-    // printf(" => found %s\n",tkCodeName(iTk->code));
     return false;
 }
 
@@ -552,13 +452,11 @@ bool structDef() {
         tkerr("invalid or missing identifier after struct");
     }
 
-    // Lookahead: only define struct if it's a full definition
     if (!consume(LACC)) {
         iTk = start;
-        return false;  // it's just a declaration (e.g., `struct S1 p1;`)
+        return false;
     }
 
-    // Now it's a *definition*, so check and add the symbol
     Symbol* s = findSymbolInDomain(symTable, tkName->text);
     if (s) {
         tkerr("symbol redefinition: %s", tkName->text);
@@ -572,7 +470,7 @@ bool structDef() {
     pushDomain();
     owner = s;
 
-    while (varDef());  // struct fields
+    while (varDef());
 
     if (!consume(RACC)) {
         tkerr("missing '}' in struct");
@@ -592,7 +490,7 @@ bool varDef() {
     Token *start = iTk;
     Type t;
 
-    if (typeBase(&t)) { // typeBase fills in the Type t
+    if (typeBase(&t)) { 
         Token* tkName = iTk;
 
         if (consume(ID)) {
@@ -603,8 +501,9 @@ bool varDef() {
 
             if (consume(SEMICOLON)) {
                 Symbol* var = findSymbolInDomain(symTable, tkName->text);
-                if (var)
+                if (var){
                     tkerr("symbol redefinition: %s", tkName->text);
+                }
 
                 var = newSymbol(tkName->text, SK_VAR);
                 var->type = t;
@@ -612,35 +511,39 @@ bool varDef() {
                 addSymbolToDomain(symTable, var);
 
                 if (owner) {
+
 					switch (owner->kind) {
+
 						case SK_FN:
-							var->varIdx = symbolsLen(owner->fn.locals);
-							addSymbolToList(&owner->fn.locals, dupSymbol(var));
-							break;
-				
+                        
+                        var->varIdx = symbolsLen(owner->fn.locals);
+                        addSymbolToList(&owner->fn.locals, dupSymbol(var));
+                        break;
+                        
 						case SK_STRUCT:
-							var->varIdx = typeSize(&owner->type);
-							addSymbolToList(&owner->structMembers, dupSymbol(var));
-							break;
+                        var->varIdx = typeSize(&owner->type);
+                        addSymbolToList(&owner->structMembers, dupSymbol(var));
+						break;
 				
 						case SK_VAR:
 						case SK_PARAM:
-							// These kinds are not expected here, so just ignore or warn
-							// Optional: log a warning or handle if needed
 							break;
 					}
 				} else {
-					var->varMem = safeAlloc(typeSize(&t));
+                    
+                    var->varMem = safeAlloc(typeSize(&t));
 				}
 
                 return true;
             } else {
+
                 tkerr("Missing semicolon ; after variable declaration.");
             }
         } else {
             tkerr("Expected identifier after type.");
         }
     }
+    
 
     iTk = start;
     return false;
@@ -668,23 +571,21 @@ bool fnDef() {
 		iTk = start;
 		return false;
 	}
-
+    
     Symbol* fn = findSymbolInDomain(symTable, tkName->text);
     if (fn) {
         tkerr("Symbol redefinition: %s", tkName->text);
     }
-
+    
     fn = newSymbol(tkName->text, SK_FN);
     fn->type = t;
     fn->fn.locals = NULL;
     fn->fn.params = NULL;
     addSymbolToDomain(symTable, fn);
-
-    // Set function context
+    
     owner = fn;
     pushDomain();
-
-    // ( fnParam ( , fnParam )* )?
+    
     if (fnParam()) {
         while (consume(COMMA)) {
             if (!fnParam()) {
@@ -693,17 +594,14 @@ bool fnDef() {
         }
     }
 
-    // RPAR
     if (!consume(RPAR)) {
         tkerr("Missing ')' after parameter list.");
     }
 
-    // stmCompound[false] (function body)
     if (!stmCompound(false)) {
         tkerr("Missing or invalid function body.");
     }
 
-    // Cleanup domain/scope
     dropDomain();
     owner = NULL;
 
@@ -730,7 +628,7 @@ bool unit()
 
 bool typeBase(Type* t) {
     Token* start = iTk;
-    t->n = -1;  // default dimension
+    t->n = -1; 
 
     if (consume(TYPE_INT)) {
         t->tb = TB_INT;
@@ -770,7 +668,7 @@ bool arrayDecl(Type *t){
 			Token *tkSize=consumedTk;
 			t->n=tkSize->i;
 		}else{
-			t->n=0; // array fara dimensiune: int v[]
+			t->n=0; 
 		}
 		if(consume(RBRACKET)){
 			return true;
@@ -780,144 +678,111 @@ bool arrayDecl(Type *t){
 	return false;
 }
 
-bool fnParam() {
-    Token* start = iTk;
-    Type t;
-
-    if (typeBase(&t)) {
-        Token* tkName = iTk;
-
-        if (consume(ID)) {
-            if (arrayDecl(&t)) {
-                if (t.n == 0)
-                    tkerr("a vector parameter must have a specified dimension");
-            }
-
-            Symbol* param = findSymbolInDomain(symTable, tkName->text);
-            if (param)
-                tkerr("symbol redefinition: %s", tkName->text);
-
-            param = newSymbol(tkName->text, SK_PARAM);
-            param->type = t;
-            param->owner = owner;
-            param->paramIdx = symbolsLen(owner->fn.params);
-
-            addSymbolToDomain(symTable, param);
-            addSymbolToList(&owner->fn.params, dupSymbol(param));
-
-            return true;
-        } else {
-            tkerr("invalid or missing identifier in function parameter.");
-        }
-    }
-
-    iTk = start;
-    return false;
+bool fnParam(){
+	Token *start = iTk;
+	Type t;
+	if (typeBase(&t)) {
+		if (consume(ID)) {
+			Token *tkName = consumedTk;
+			if (arrayDecl(&t)) {
+				t.n=0;
+			}
+			Symbol *param=findSymbolInDomain(symTable,tkName->text);
+			if(param)tkerr("symbol redefinition: %s",tkName->text);
+			param=newSymbol(tkName->text,SK_PARAM);
+			param->type=t;
+			param->owner=owner;
+			param->paramIdx=symbolsLen(owner->fn.params);
+			addSymbolToDomain(symTable,param);
+			addSymbolToList(&owner->fn.params,dupSymbol(param));
+			return true;
+		} else {
+			tkerr("Lipseste numele parametrului");
+		}
+	}
+	iTk = start;
+	return false;
 }
 
-bool stm() {
-    Token* start = iTk;
-
-    if (stmCompound(true)) {
-        return true;
-    }
-
-    if (consume(IF)) {
-        if (consume(LPAR)) {
-            if (expr()) {
-                if (consume(RPAR)) {
-                    if (stm()) {
-                        if (consume(ELSE)) {
-                            if (stm()) {
-                                return true;
-                            } else {
-                                tkerr("Missing or invalid statement in ELSE branch.");
-                            }
-                        }
-                        return true; // IF without ELSE is valid
-                    } else {
-                        tkerr("Missing or invalid statement in IF.");
-                    }
-                } else {
-                    tkerr("Missing ')' after expression in IF.");
-                }
-            } else {
-                tkerr("Missing or invalid expression in IF.");
-            }
-        } else {
-            tkerr("Missing '(' after IF.");
-        }
-        iTk = start; return false; // Backtrack after IF failure
-    }
-
-    // WHILE statement
-    if (consume(WHILE)) {
-        if (consume(LPAR)) {
-            if (expr()) {
-                if (consume(RPAR)) {
-                    if (stm()) {
-                        return true;
-                    } else {
-                        tkerr("Missing or invalid statement in WHILE.");
-                    }
-                } else {
-                    tkerr("Missing ')' after expression in WHILE.");
-                }
-            } else {
-                tkerr("Missing or invalid expression in WHILE.");
-            }
-        } else {
-            tkerr("Missing '(' after WHILE.");
-        }
-        iTk = start; return false;
-    }
-
-    // RETURN statement (with optional expression)
-    if (consume(RETURN)) {
-        expr(); // optional
-        if (consume(SEMICOLON)) {
-            return true;
-        } else {
-            tkerr("Missing ';' after RETURN.");
-            iTk = start; return false;
-        }
-    }
-
-    // Empty statement (just a semicolon)
-    if (consume(SEMICOLON)) {
-        return true;
-    }
-
-    // Expression statement
-    if (expr()) {
-        if (consume(SEMICOLON)) {
-            return true;
-        } else {
-            tkerr("Missing ';' after expression.");
-            iTk = start; return false;
-        }
-    }
-
-    // If all fails, backtrack and return false
-    iTk = start;
-    return false;
+bool stm(){
+	// printf("Stm\n");
+	Token* start= iTk;
+	Ret rCond,rExpr;
+	if(stmCompound(true)){
+		// printf("stmCompound->stm\n ");
+		return true;
+	}
+	if(consume(IF)){
+		if(consume(LPAR)){
+			if(expr(&rCond)){
+				if(!canBeScalar(&rCond))
+                    tkerr("the if condition must be a scalar value");
+				if(consume(RPAR)){
+					if(stm()){
+						if(consume(ELSE)){
+							if(stm()){}else tkerr("else statement mssing");
+						}
+						return true;
+					}else tkerr("if statement mssing");
+				}else tkerr("Missing ) for if");
+			}else tkerr("Missing if expression");
+		}else tkerr("Missing ( after if");
+	}
+	else if(consume(WHILE)){
+		if(consume(LPAR)){
+			if(expr(&rCond)){
+				if(!canBeScalar(&rCond))
+                    tkerr("the while condition must be a scalar value");
+				if(consume(RPAR)){
+					if(stm()){
+						return true;
+					}else tkerr("Missing while body");
+				}else tkerr("Missing ) for while");
+			}else tkerr("Missing while condition");
+		}else tkerr("Missing ( after while keyword");
+		iTk=start;
+	}
+	else if(consume(RETURN)){
+			if(expr(&rExpr)) {
+				if(owner->type.tb==TB_VOID)
+					tkerr("a void function cannot return a value");
+				if(!canBeScalar(&rExpr))
+					tkerr("the return value must be a scalar value");
+				if(!convTo(&rExpr.type,&owner->type))
+					tkerr("cannot convert the return expression type to the function return type");
+			} else {
+				if(owner->type.tb!=TB_VOID)
+					tkerr("a non-void function must return a value");
+				}
+			if(consume(SEMICOLON)){
+				return true;
+			}else tkerr("missing ; at return statement");
+	}
+	else if(expr(&rExpr)){
+		if(consume(SEMICOLON)){
+			return true;
+		}else tkerr("Missing ; at the end of expression");
+	}
+	if(consume(SEMICOLON)){
+		return true;
+	}
+	iTk = start;
+	return false;
 }
+
 
 bool stmCompound(bool newDomain) {
     Token* start = iTk;
 
     if (consume(LACC)) {
-        if (newDomain)
+        if (newDomain){
             pushDomain();
+        }
 
         while (true) {
-            if (varDef()) {
-                // handled inside varDef
-            } else if (stm()) {
-                // handled inside stm
-            } else {
-                break;
-            }
+            if (varDef()) {} 
+            else if (stm()){} 
+            else {break;}
         }
 
         if (consume(RACC)) {
@@ -928,13 +793,13 @@ bool stmCompound(bool newDomain) {
             tkerr("missing '}' after compound statement");
         }
 
-        // Only drop if we had pushed
-        if (newDomain)
+        if (newDomain){
             dropDomain();
+        }
     }
 
     iTk = start;
     return false;
 }
 
-#pragma GCC diagnostic pop
+//fnParam + exprAll
