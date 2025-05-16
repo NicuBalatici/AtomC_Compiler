@@ -6,21 +6,25 @@
 #include "parser.h"
 #include "ad.h"
 #include "at.h"
+#include "vm.h"
 
 int main(void)
 {
-    char *pch = loadFile("tests/testat.c");
-    Token *tokens = tokenize(pch);
+    // char *pch = loadFile("tests/testat.c");
+    // Token *tokens = tokenize(pch);
 
     //showTokens(tokens);
     //showTokensTerminal(tokens);
     pushDomain();
-    parse(tokens);
-    showDomain(symTable, "global");
+    vmInit();
+    // parse(tokens);
+    // showDomain(symTable, "global");
+    Instr *testCode=genTestProgram2();
+    run(testCode);
     while (symTable) {
         dropDomain();
     }
     
-    free(pch);
+    // free(pch);
     return 0;
 }

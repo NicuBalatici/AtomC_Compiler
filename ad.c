@@ -85,9 +85,7 @@ void freeSymbol(Symbol *s){
 			freeSymbols(s->structMembers);
 			break;
 	
-			// ✅ Add this missing case to silence the warning:
 		case SK_PARAM:
-				// Nothing to free specific to SK_PARAM
 			break;
 	}
 	free(s);
