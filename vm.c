@@ -262,7 +262,7 @@ Instr *genTestProgram2() {
 
     // while (i < n)
     Instr *whileStart = addInstrWithInt(&code, OP_FPLOAD, 1);   // Load i
-    addInstrWithInt(&code, OP_FPLOAD, -2);                      // Load n (arg) from FP[-2] ✅ FIXED
+    addInstrWithInt(&code, OP_FPLOAD, -2);                      // Load n (arg) from FP[-2]
     addInstr(&code, OP_LESS_D);                                 // i < n
     Instr *jfExit = addInstr(&code, OP_JF);                     // Jump if false
 
