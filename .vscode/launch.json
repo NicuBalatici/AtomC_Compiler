@@ -6,8 +6,8 @@
       "type": "lldb",
       "request": "launch",
       "args": [],
-      "cwd": "/Users/balaticinicolae/Library/CloudStorage/OneDrive-Personal/Documente/Facultate AC 2022-2026 LICENTA/POLI_AN_3/SEM2/LFTC lab/lab2",
-      "program": "/Users/balaticinicolae/Library/CloudStorage/OneDrive-Personal/Documente/Facultate AC 2022-2026 LICENTA/POLI_AN_3/SEM2/LFTC lab/lab2/build/Debug/outDebug"
+      "cwd": "/Users/balaticinicolae/Library/CloudStorage/OneDrive-Personal/Documente/Facultate AC 2022-2026 LICENTA/POLI_AN_3/SEM2/LFTC lab/AtomC_Compiler",
+      "program": "/Users/balaticinicolae/Library/CloudStorage/OneDrive-Personal/Documente/Facultate AC 2022-2026 LICENTA/POLI_AN_3/SEM2/LFTC lab/AtomC_Compiler/build/Debug/outDebug"
     }
   ]
 }
